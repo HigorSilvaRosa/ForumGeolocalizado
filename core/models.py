@@ -31,6 +31,7 @@ class Post(BaseModel):
     class Meta:
         verbose_name = u"Postagem"
         verbose_name_plural = u"Postagens"
+        ordering = ["-id"]
 
 
 class TopicReport(BaseModel):

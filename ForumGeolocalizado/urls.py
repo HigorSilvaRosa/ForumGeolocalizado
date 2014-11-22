@@ -3,7 +3,7 @@ from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
 
 from django.contrib import admin
-from core.views import TopicView
+from core.views import TopicView, LoginView
 
 admin.autodiscover()
 
@@ -13,8 +13,8 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
-
-    url(r'^topic/', TopicView.as_view(), name='topic'),
+    url(r'^topic/(?P<topic_id>\d+)', TopicView.as_view(), name='topic'),
+    url(r'^login/', LoginView.as_view(), name='login'),
 )
 
 #
