@@ -1,0 +1,111 @@
+{% extends "site/base.html" %}
+{% block content %}
+    <div id="map"></div>
+    <div class="col-md-8"></div>
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" href="#vertical-panel" aria-expanded="true" aria-controls="vertical-panel">
+                        Menu {% if user.is_authenticated %}- (logado como: <strong>{{ user.username }}</strong>) {% endif %}
+                    </a>
+                </h4>
+            </div>
+            <div id="vertical-panel" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                <h1>Fórum Geolocalizado</h1>
+                <div class="panel-body">
+                    <div class="btn-group" role="group">
+                        {% if not user.is_authenticated %}
+                            <button type="button" id="show-login-modal-button" class="btn btn-default">Entrar</button>
+                            <a class="btn btn-default">Cadastrar-se</a>
+                        {% else %}
+                            <button type="button" id="show-new-topic-button"  class="btn btn-default">Criar tópico</button>
+                            <a href="{% url "logout" %}" class="btn btn-default">Sair</a>
+                        {% endif %}
+                    </div>
+
+                    <h2>Tópicos nessa área</h2>
+
+                    <div class="list-group" id="topic-list">
+                        <a href="#" class="list-group-item disabled">
+                            Clique em um marcador no mapa
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        var map;
+        var topicsMarkers = []
+        var topics = []
+
+        function initializeMap() {
+            var mapOptions = {
+                zoom: 12,
+                center: new google.maps.LatLng(-34.397, 150.644)
+            };
+            map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        }
+
+        function renderTopicsOnMap(response){
+            topics = response["topics"]
+            for (i in topics){
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(topics[i]["latitude"], topics[i]["longitude"]),
+                    map: map,
+                    title: topics[i]["name"],
+                    animation: google.maps.Animation.DROP
+                });
+                google.maps.event.addListener(marker, 'click', function() {
+                    var markerPosition = new google.maps.LatLng(marker.getPosition().lat(), marker.getPosition().lng());
+                    var html = "";
+                    for (k in topics){
+                        var topicMarker = new google.maps.LatLng(topics[k]["latitude"], topics[k]["longitude"]);
+                        if (topicMarker.lat() == markerPosition.lat() && topicMarker.lng() == markerPosition.lng()){
+                            html = html+'<a href="topic/'+topics[k]['id']+'" class="list-group-item">'+topics[k]['name']+'</a>';
+                        }
+                    }
+                    $('#topic-list').html(html);
+                });
+                topicsMarkers.push(marker);
+            }
+
+        }
+
+        $(document).ready(function() {
+            initializeMap();
+
+            {% if coordinates %}
+                Dajaxice.core.get_near_topics(
+                        renderTopicsOnMap,
+                        {latitude:userCoordinates['latitude'], longitude:userCoordinates['longitude']}
+                );
+            {% endif %}
+
+            var windowHeight = $(window).height();
+            $('#map').css('height', windowHeight);
+            {% if coordinates %}
+                var mapCenter = new google.maps.LatLng(userCoordinates["latitude"], userCoordinates["longitude"]);
+                map.setCenter(mapCenter);
+            {% endif %}
+
+        });
+        $(window).resize(function(){
+            windowHeight = $(window).height();
+            $('#map').css('height', windowHeight);
+        });
+
+        $("#show-login-modal-button").click(function(){
+            $('#login-modal').modal('show');
+        });
+
+        $("#show-new-topic-button").click(function(){
+            $('#new-topic-modal').modal('show');
+        });
+
+    </script>
+{% endblock %}

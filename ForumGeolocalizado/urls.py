@@ -3,7 +3,9 @@ from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
 
 from django.contrib import admin
-from core.views import TopicView, LoginView
+from core.views import TopicView, HomeView, LoginView, LogoutView, CreateTopicView
+from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+dajaxice_autodiscover()
 
 admin.autodiscover()
 
@@ -13,8 +15,12 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^$', HomeView.as_view(), name='home'),
     url(r'^topic/(?P<topic_id>\d+)', TopicView.as_view(), name='topic'),
-    url(r'^login/', LoginView.as_view(), name='login'),
+    url(r'^login/$', LoginView.as_view(), name='login'),
+    url(r'^logout/$', LogoutView.as_view(), name='logout'),
+    url(r'^create-topic/$', CreateTopicView.as_view(), name='create-topic'),
+    url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
 )
 
 #

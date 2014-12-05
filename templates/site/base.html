@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap 101 Template</title>
+    <title>Fórum Geolocalizado</title>
 
     <!-- Bootstrap -->
     <link href="{{ STATIC_URL }}css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ STATIC_URL }}css/style.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -17,13 +18,117 @@
     <![endif]-->
 </head>
 <body>
-<div class="container">
-    {% block content %}{% endblock %}
-</div>
+{% block content %}{% endblock %}
+<div class="modal fade" id="login-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form role="form" method="post" action="{% url "login" %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">Fazer login!</h4>
+                </div>
+                <div class="modal-body">
+
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span aria-hidden="true">&times;</span>
+                                <span class="sr-only">Close</span>
+                            </button>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+
+                    <label for="username" class="sr-only">Usuário</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Digite seu usuário..." required autofocus>
+                    <label for="password" class="sr-only">Senha</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Digite sua senha..." required>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% if user.is_authenticated %}
+    <div class="modal fade" id="new-topic-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form role="form" method="post" action="{% url "create-topic" %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Novo tópico</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="topic-name">Nome</label>
+                            <input type="text" maxlength="150" class="form-control" id="topic-name" name="name" placeholder="Sobre o que você quer discutir?">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Criar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+<script type='text/javascript' src='{{STATIC_URL}}dajaxice/dajaxice.core.js'></script>
+
+{% if not user.is_authenticated %}
+    <script type="text/javascript">
+        $(window).load(function(){
+            $('#login-modal').modal('show');
+        });
+    </script>
+{% endif %}
+
+<script type="text/javascript">
+
+    var userCoordinates = null;
+
+    {% if coordinates %}
+        userCoordinates = {
+            latitude: {{ coordinates.latitude }},
+            longitude: {{ coordinates.longitude }}
+        };
+    {% endif %}
+
+    function saveLocation(position){
+        userCoordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        };
+        Dajaxice.core.save_user_coordinates(
+                function(response){location.reload(true);},
+                {latitude:position.coords.latitude, longitude:position.coords.longitude}
+        );
+    }
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(saveLocation);
+        } else {
+            console.log("Impossível acessar localização atual do usuário.");
+        }
+    }
+
+    $(document).ready(function(){
+        {% if not coordinates and user.is_authenticated %}
+            getLocation();
+        {% endif %}
+    });
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>
